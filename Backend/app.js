@@ -15,6 +15,10 @@ app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
   next();
 });
+app.use((req, res, next) => {
+   console.log("Request Source (Referer):", req.headers.referer);
+   next();
+ });
 
 app.use(cors());
 app.use(morgan('dev'));
