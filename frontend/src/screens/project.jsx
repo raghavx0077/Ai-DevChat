@@ -106,7 +106,7 @@ const Project = () => {
       })
       .then((res) => {
         console.log("Collaborators updated:", res.data);
-        // Re-fetch updated project data.
+        // Re-fetch updated project data so that the UI reflects the change immediately.
         axios
           .get(`/projects/get-projects/${location.state.project._id}`)
           .then((res) => {
@@ -148,6 +148,7 @@ const Project = () => {
       }
       console.log("Parsed Message:", parsedMessage);
 
+      // Check if the message includes a fileTree update.
       if (parsedMessage.fileTree && typeof parsedMessage.fileTree === "object") {
         console.log("FileTree received:", parsedMessage.fileTree);
         if (webContainer) {
@@ -161,6 +162,7 @@ const Project = () => {
           ]);
         }
       } else {
+        // Otherwise, treat it as a chat message.
         setMessages((prev) => [...prev, { ...parsedMessage, rawData: data }]);
       }
     },
@@ -241,10 +243,7 @@ const Project = () => {
                       <Markdown
                         options={{
                           overrides: {
-                            p: {
-                              component: "div",
-                              props: { className: "break-words" },
-                            },
+                            p: { component: "div", props: { className: "break-words" } },
                             code: { component: CodeBlock },
                           },
                         }}
@@ -264,7 +263,7 @@ const Project = () => {
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
+              placeholder="Enter Message"
               className="w-full rounded-md border border-gray-300 p-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <button
@@ -336,6 +335,10 @@ const Project = () => {
               <div className="flex space-x-3">
                 <button
                   onClick={async () => {
+                    if (!webContainer) {
+                      console.error("Web container is not available.");
+                      return;
+                    }
                     await webContainer.mount(fileTree);
                     const installProcess = await webContainer.spawn("npm", ["install"]);
                     installProcess.output.pipeTo(
@@ -371,7 +374,7 @@ const Project = () => {
             <div className="flex-grow bg-gray-50 p-6 overflow-auto">
               {fileTree[currentFile] && (
                 <div className="bg-white p-6 rounded shadow transition">
-                  <pre className="hljs">
+                  <pre className="hljs h-full">
                     <code
                       className="hljs h-full outline-none"
                       contentEditable
@@ -461,3 +464,4 @@ const Project = () => {
 };
 
 export default Project;
+
