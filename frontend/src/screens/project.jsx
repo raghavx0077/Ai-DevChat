@@ -418,7 +418,7 @@ const Project = () => {
           </div>
         </section>
         {iframeUrl && webContainer && (
-          <div className="w-full h-full">
+          <div className="w-80 h-full">
             <div className="p-2 bg-gray-100 border-b border-gray-200">
               <input
                 type="text"
