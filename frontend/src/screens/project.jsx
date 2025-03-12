@@ -59,6 +59,7 @@ const Project = () => {
   const [messages, setMessages] = useState([]);
   const [fileTree, setFileTree] = useState({});
   const [currentFile, setCurrentFile] = useState(null);
+  // Instead of accumulating file names, we update the openFiles with the new file keys.
   const [openFiles, setOpenFiles] = useState([]);
   const [webContainer, setWebContainer] = useState(null);
   const [iframeUrl, setIframeUrl] = useState(null);
@@ -84,7 +85,7 @@ const Project = () => {
   useEffect(() => {
     getWebContainer().then((container) => {
       setWebContainer(container);
-      console.log("Container started");
+      console.log("Container started:", Boolean(container));
     });
   }, []);
 
@@ -106,7 +107,6 @@ const Project = () => {
       })
       .then((res) => {
         console.log("Collaborators updated:", res.data);
-        // Re-fetch updated project data so that the UI reflects the change immediately.
         axios
           .get(`/projects/get-projects/${location.state.project._id}`)
           .then((res) => {
@@ -128,7 +128,7 @@ const Project = () => {
     setMessage("");
   };
 
-  // Combined handleMessage function.
+  // Combined handleMessage function that supports fileTree updates and chat messages.
   const handleMessage = useCallback(
     (data) => {
       console.log("Received Message:", data);
@@ -148,13 +148,15 @@ const Project = () => {
       }
       console.log("Parsed Message:", parsedMessage);
 
-      // Check if the message includes a fileTree update.
+      // If the parsed message contains a fileTree update, update fileTree and openFiles.
       if (parsedMessage.fileTree && typeof parsedMessage.fileTree === "object") {
         console.log("FileTree received:", parsedMessage.fileTree);
         if (webContainer) {
           webContainer.mount(parsedMessage.fileTree);
         }
         setFileTree(parsedMessage.fileTree);
+        // Update the openFiles list to include only the new file keys.
+        setOpenFiles(Object.keys(parsedMessage.fileTree));
         if (parsedMessage.text) {
           setMessages((prev) => [
             ...prev,
@@ -201,10 +203,16 @@ const Project = () => {
   const isAISender = (sender) =>
     typeof sender === "object" ? sender._id === "ai" : sender === "ai";
 
+  // File tree click handler: replaces openFiles with the selected file.
+  const handleFileClick = (file) => {
+    setCurrentFile(file);
+    setOpenFiles([file]);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <main className="flex h-screen">
-        {/* Left Panel: Chat Area with Relative Positioning */}
+        {/* Left Panel: Chat Area */}
         <section className="relative w-1/4 flex flex-col bg-white border-r border-gray-200 p-6 shadow-sm">
           <header className="flex justify-between items-center pb-4 border-b border-gray-200">
             <button
@@ -307,8 +315,7 @@ const Project = () => {
                 <button
                   key={index}
                   onClick={() => {
-                    setCurrentFile(file);
-                    setOpenFiles((prev) => [...new Set([...prev, file])]);
+                    handleFileClick(file);
                   }}
                   className="w-full text-left p-2 rounded hover:bg-gray-200 transition"
                 >
@@ -337,6 +344,7 @@ const Project = () => {
                   onClick={async () => {
                     if (!webContainer) {
                       console.error("Web container is not available.");
+                      alert("Web container is not available in this environment.");
                       return;
                     }
                     await webContainer.mount(fileTree);
@@ -430,7 +438,7 @@ const Project = () => {
                 {users.map((user) => (
                   <div
                     key={user._id}
-                    className={`p-2 border rounded cursor-pointer ${
+                    className={`p-2 border rounded-md cursor-pointer ${
                       selectedUserId.includes(user._id)
                         ? "bg-blue-100 text-blue-800"
                         : "bg-gray-100 text-gray-700"
@@ -464,4 +472,5 @@ const Project = () => {
 };
 
 export default Project;
+
 
